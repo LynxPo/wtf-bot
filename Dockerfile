@@ -7,7 +7,8 @@ WORKDIR /app
 COPY . .
 
 # Compile
-RUN javac SmartLevelSpammer.java
+RUN javac Main.java
 
 # Chạy chương trình bình thường (quan trọng: không dùng shell form)
-ENTRYPOINT ["java", "SmartLevelSpammer"]
+ENTRYPOINT ["java", "Main"]
+
