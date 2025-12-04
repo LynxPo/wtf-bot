@@ -1,5 +1,5 @@
-# Sử dụng Java image nhẹ
-FROM openjdk:17-jdk-alpine
+# Sử dụng image Eclipse Temurin (thay thế cho openjdk cũ)
+FROM eclipse-temurin:17-jdk-alpine
 
 # Tạo thư mục làm việc
 WORKDIR /app
@@ -10,5 +10,5 @@ COPY SecureDiscordBot.java .
 # Biên dịch file java
 RUN javac SecureDiscordBot.java
 
-# Lệnh chạy bot khi khởi động
+# Lệnh chạy bot
 CMD ["java", "SecureDiscordBot"]
