@@ -4,7 +4,7 @@ import javax.net.ssl.HttpsURLConnection;   // <<< ĐÂY LÀ DÒNG CỨU CÁNH
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public class SmartLevelSpammer {
+class SmartLevelSpammer {
 
     private static final String USER_TOKEN = System.getenv("DISCORD_TOKEN");
     private static final String CHANNEL_ID = System.getenv("CHANNEL_ID");
