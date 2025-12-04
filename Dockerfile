@@ -6,4 +6,5 @@ WORKDIR /app
 COPY . .
 
 # Compile file java (vì mày chỉ có 1 file .java)
-RUN javac SecureDiscordBot.java
+RUN javac Main.java
+
