@@ -26,7 +26,7 @@ class Main {
 
     // Tên biến môi trường (BẢO MẬT)
     private static final String TOKEN_ENV_NAME = "MY_DISCORD_TOKEN";
-    private static final String CHANNEL_ENV_NAME = "CHANNEL_ID";
+    private static final String CHANNEL_ENV_NAME = "MYCHANNEL_ID";
 
     // ============================================
     // LOGIC XỬ LÝ
