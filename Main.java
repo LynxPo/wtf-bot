@@ -1,134 +1,169 @@
 import java.io.*;
-import java.net.*;
-import javax.net.ssl.HttpsURLConnection;   // <<< ĐÂY LÀ DÒNG CỨU CÁNH
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 class Main {
 
-    private static final String USER_TOKEN = System.getenv("DISCORD_TOKEN");
-    private static final String CHANNEL_ID = System.getenv("CHANNEL_ID");
+    // ============================================
+    // PHẦN CẤU HÌNH
+    // ============================================
 
-    private static final List<String> MESSAGES = Arrays.asList(
-        "!d bump", ".bump", "!bump", "bump", "bump nha",
-        "!d bump done", ".bump done", "up", "up nào ae", "bump server nè"
-    );
+    // Channel ID muốn gửi tin
+    private static final String CHANNEL_ID = "1011985329529569400";
 
-    private static final Random random = new Random();
-    private static Timer timer;
+    // Cấu hình thời gian (Đơn vị: PHÚT)
+    private static final int MIN_MINUTES = 120; // Tối thiểu 2 tiếng
+    private static final int MAX_MINUTES = 135; // Tối đa 2 tiếng 15 phút
+
+    // Danh sách tin nhắn để random
+    private static final String[] MESSAGES = {
+            "Xin chào mọi người!",
+            "Chúc một ngày tốt lành.",
+            "Tôi đang treo máy, đừng tag nhé.",
+            "Hello world!",
+            "Cảm ơn vì đã chia sẻ.",
+            "Tuyệt vời quá."
+    };
+
+    // Tên biến môi trường chứa Token (Bảo mật)
+    private static final String ENV_VAR_NAME = "MY_DISCORD_TOKEN";
+
+    // ============================================
+    // LOGIC XỬ LÝ
+    // ============================================
+
     private static volatile boolean isRunning = true;
+    private static final Random random = new Random();
+    private static String USER_TOKEN = "";
 
     public static void main(String[] args) {
-        System.out.println("=== Smart Level Spammer (2h00 - 2h15 random) ===\n");
+        System.out.println("=================================");
+        System.out.println("Discord Advanced Self-Bot");
+        System.out.println("=================================\n");
 
-        if (USER_TOKEN == null || USER_TOKEN.isEmpty() || USER_TOKEN.length() < 30) {
-            System.err.println("LỖI: DISCORD_TOKEN sai hoặc chưa đặt!");
+        // 1. Lấy Token từ biến môi trường (BẢO MẬT)
+        USER_TOKEN = System.getenv(ENV_VAR_NAME);
+
+        if (USER_TOKEN == null || USER_TOKEN.isEmpty()) {
+            System.err.println("❌ LỖI: Không tìm thấy Token!");
+            System.err.println("Vui lòng tạo biến môi trường tên: " + ENV_VAR_NAME);
+            System.err.println("Cách làm: Xem hướng dẫn bên dưới code.");
             return;
         }
-        if (CHANNEL_ID == null || CHANNEL_ID.isEmpty()) {
-            System.err.println("LỖI: Thiếu CHANNEL_ID!");
+
+        if (CHANNEL_ID.equals("123456789012345678")) {
+            System.err.println("❌ LỖI: Bạn chưa thay đổi CHANNEL_ID trong code!");
             return;
         }
 
-        System.out.println("Token: " + mask(USER_TOKEN));
-        System.out.println("Channel: " + CHANNEL_ID);
-        System.out.println("Bump mỗi 120-135 phút (random) + tin nhắn random\n");
+        System.out.println("--- CẤU HÌNH ---");
+        System.out.println("Token: " + maskToken(USER_TOKEN));
+        System.out.println("Channel ID: " + CHANNEL_ID);
+        System.out.println("Thời gian: Random từ " + MIN_MINUTES + " đến " + MAX_MINUTES + " phút.");
+        System.out.println("Số lượng tin nhắn mẫu: " + MESSAGES.length);
+        System.out.println("----------------\n");
 
-        startSpammer();
+        // Thread lắng nghe phím bấm để dừng
+        Thread inputThread = new Thread(() -> {
+            try {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+                while (isRunning) {
+                    if (reader.ready()) {
+                        String input = reader.readLine();
+                        if (input != null && input.trim().equals("9")) {
+                            System.out.println("\n⏳ Đang dừng bot...");
+                            isRunning = false;
+                            break;
+                        }
+                    }
+                    Thread.sleep(100);
+                }
+            } catch (Exception e) {}
+        });
+        inputThread.start();
 
-        new Thread(() -> {
-            try { System.in.read(); } catch (Exception ignored) {}
-            stopSpammer();
-        }).start();
+        System.out.println("Bot đang chạy. 👉 Nhấn số 9 và Enter để dừng.\n");
+
+        // Vòng lặp chính
+        runBotLoop();
     }
 
-    private static void startSpammer() {
-        System.out.println("Spammer đã chạy! Nhấn Enter để dừng.\n");
-        scheduleNextBump();
-    }
+    private static void runBotLoop() {
+        while (isRunning) {
+            // 2. Chọn tin nhắn ngẫu nhiên
+            String messageToSend = MESSAGES[random.nextInt(MESSAGES.length)];
 
-    private static long randomDelay() {
-        long extra = (long) (random.nextDouble() * 900_000L); // 0 - 15 phút
-        return 7_200_000L + extra; // 120 phút + extra
-    }
+            // Gửi tin
+            sendMessage(messageToSend);
 
-    private static void scheduleNextBump() {
-        if (!isRunning) return;
+            // 3. Tính toán thời gian ngủ ngẫu nhiên
+            // Công thức: (Min + random(0 đến Max-Min)) * 60 * 1000 (đổi ra mili giây)
+            int randomMinutes = MIN_MINUTES + random.nextInt(MAX_MINUTES - MIN_MINUTES + 1);
+            long sleepMillis = randomMinutes * 60 * 1000L;
 
-        long delay = randomDelay();
+            // Thêm một chút giây lẻ để tự nhiên hơn (cộng thêm 0-59 giây)
+            sleepMillis += random.nextInt(60) * 1000L;
 
-        timer = new Timer(true);
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                sendRandomMessage();
-                scheduleNextBump();
+            System.out.println("💤 Bot sẽ nghỉ trong: " + randomMinutes + " phút (" + (sleepMillis/1000) + " giây)...");
+
+            try {
+                // Ngủ... (có thể bị đánh thức nếu user bấm dừng)
+                for (long i = 0; i < sleepMillis; i += 1000) {
+                    if (!isRunning) return;
+                    Thread.sleep(1000);
+                }
+            } catch (InterruptedException e) {
+                break;
             }
-        }, delay);
-
-        long minutes = delay / 60_000;
-        System.out.println("[" + timeNow() + "] Lần bump tiếp theo sau ~" + minutes + " phút");
+        }
+        System.out.println("🛑 BOT ĐÃ DỪNG.");
     }
 
-    private static void sendRandomMessage() {
-        String message = MESSAGES.get(random.nextInt(MESSAGES.size()));
-
+    private static void sendMessage(String message) {
+        if (!isRunning) return;
         try {
-            URL url = new URI("https://discord.com/api/v9/channels/" + CHANNEL_ID + "/messages").toURL();
-            HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+            String apiUrl = "https://discord.com/api/v9/channels/" + CHANNEL_ID + "/messages";
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Authorization", USER_TOKEN);
             conn.setRequestProperty("Content-Type", "application/json");
-            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
             conn.setDoOutput(true);
 
-            String payload = "{\"content\":\"" + message.replace("\"", "\\\"") + "\"}";
+            String jsonPayload = String.format("{\"content\":\"%s\"}", escapeJson(message));
+
             try (OutputStream os = conn.getOutputStream()) {
-                os.write(payload.getBytes(StandardCharsets.UTF_8));
+                byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
             }
 
-            int code = conn.getResponseCode();
+            int responseCode = conn.getResponseCode();
+            String timestamp = new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date());
 
-            if (code == 200 || code == 204) {
-                System.out.println("[" + timeNow() + "] ĐÃ BUMP: " + message);
+            if (responseCode == 200 || responseCode == 201) {
+                System.out.println("[" + timestamp + "] ✓ Đã gửi: \"" + message + "\"");
             } else {
-                String err = readStream(code >= 400 ? conn.getErrorStream() : conn.getInputStream());
-                System.out.println("[" + timeNow() + "] LỖI " + code + ": " + err);
-                if (code == 401 || code == 403) {
-                    System.err.println("TOKEN DIE RỒI BRO! Đổi acc mới đi...");
-                    stopSpammer();
-                }
+                System.out.println("[" + timestamp + "] ✗ Lỗi (" + responseCode + ")");
             }
             conn.disconnect();
 
         } catch (Exception e) {
-            System.out.println("[" + timeNow() + "] Lỗi kết nối: " + e.getMessage());
+            System.out.println("✗ Lỗi kết nối: " + e.getMessage());
         }
     }
 
-    private static void stopSpammer() {
-        isRunning = false;
-        if (timer != null) timer.cancel();
-        System.out.println("\nSpammer đã dừng!");
-        System.exit(0);
+    private static String maskToken(String token) {
+        if (token == null || token.length() <= 10) return "***";
+        return token.substring(0, 5) + "..." + token.substring(token.length() - 5);
     }
 
-    private static String timeNow() {
-        return new java.text.SimpleDateFormat("HH:mm:ss").format(new Date());
-    }
-
-    private static String readStream(InputStream stream) throws IOException {
-        if (stream == null) return "";
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(stream))) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = br.readLine()) != null) sb.append(line);
-            return sb.toString();
-        }
-    }
-
-    private static String mask(String s) {
-        if (s.length() < 10) return "****";
-        return s.substring(0, 8) + "..." + s.substring(s.length() - 6);
+    private static String escapeJson(String text) {
+        return text.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
     }
 }
