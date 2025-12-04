@@ -16,10 +16,10 @@ class Main {
 
     // Danh sách tin nhắn để random
     private static final String[] MESSAGES = {
-            "Xin hay tin tuong :pray:",
-            ":pray: moi su tot dep",
+            "Xin hay tin tuong :worrypray:",
+            ":worrypray: moi su tot dep",
             "Vuon minh :thap:",
-            "Tin tuog qua trinh :pray:"
+            "Tin tuog qua trinh :worrypray:"
     };
 
     // Tên biến môi trường (BẢO MẬT)
