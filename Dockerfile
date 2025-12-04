@@ -1,14 +1,9 @@
-# Sử dụng image Eclipse Temurin (thay thế cho openjdk cũ)
 FROM eclipse-temurin:17-jdk-alpine
 
-# Tạo thư mục làm việc
 WORKDIR /app
 
-# Copy file code vào
-COPY SecureDiscordBot.java .
+COPY target/*.jar app.jar
 
-# Biên dịch file java
-RUN javac SecureDiscordBot.java
+EXPOSE 8080
 
-# Lệnh chạy bot
-CMD ["java", "SecureDiscordBot"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
