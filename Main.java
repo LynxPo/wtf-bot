@@ -5,116 +5,58 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class Main {
-
-    private static final String USER_TOKEN = System.getenv("DISCORD_TOKEN");
-    private static final String CHANNEL_ID = System.getenv("CHANNEL_ID");
-
-    private static final List<String> MESSAGES = Arrays.asList(
+    private static final String TOKEN = System.getenv("DISCORD_TOKEN");
+    private static final String CHANNEL = System.getenv("CHANNEL_ID");
+    private static final Random r = new Random();
+    private static final String[] MSG = {
         "!d bump", ".bump", "!bump", "bump", "bump nha",
-        "!d bump done", ".bump done", "up", "up nào ae", "bump server nè"
-    );
+        "up", "up nào ae", "bump server nè", "!d bump done"
+    };
 
-    private static final Random random = new Random();
-    private static Timer timer;
-    private static volatile boolean isRunning = true;
-
-    public static void main(String[] args) {
-        System.out.println("=== Smart Level Spammer (2h00 - 2h15 random) ===\n");
-
-        if (USER_TOKEN == null || USER_TOKEN.isEmpty() || USER_TOKEN.length() < 30) {
-            System.err.println("LỖI: DISCORD_TOKEN sai hoặc chưa đặt!");
-            return;
-        }
-        if (CHANNEL_ID == null || CHANNEL_ID.isEmpty()) {
-            System.err.println("LỖI: Thiếu CHANNEL_ID!");
+    public static void main(String[] args) throws Exception {
+        if (TOKEN == null || CHANNEL == null) {
+            System.out.println("Thiếu DISCORD_TOKEN hoặc CHANNEL_ID");
             return;
         }
 
-        System.out.println("Token: " + mask(USER_TOKEN));
-        System.out.println("Channel: " + CHANNEL_ID);
-        System.out.println("Bump mỗi 120-135 phút (random) + tin nhắn random\n");
+        System.out.println("=== Smart Spammer đang chạy ===");
+        System.out.println("Token: " + TOKEN.substring(0, 10) + "...");
+        System.out.println("Channel: " + CHANNEL + "\n");
 
-        // Gửi thử 1 tin ngay khi khởi động để biết nó sống
-        sendRandomMessage();
-        System.out.println("[TEST] Đã gửi tin nhắn thử – nếu thấy trong Discord = đang chạy ngon!\n");
+        // Gửi thử ngay 1 phát để biết còn sống
+        send("!d bump — test khởi động thành công");
 
-        startSpammer();
+        // Loop vô hạn
+        while (true) {
+            long delay = 7_200_000L + r.nextLong(900_000L); // 120-135 phút
+            Thread.sleep(delay);
+            send(MSG[r.nextInt(MSG.length)]);
+            System.out.println("[" + new Date() + "] Đã bump – chờ ~" + (delay/60_000) + " phút nữa");
+        }
     }
 
-    private static void startSpammer() {
-        System.out.println("Spammer chính thức chạy 24/7! Chờ 2h-2h15 sẽ tự bump...\n");
-        scheduleNextBump();
-    }
-
-    private static long randomDelay() {
-        long extra = (long) (random.nextDouble() * 900_000L); // 0-15 phút
-        return 7_200_000L + extra; // 120 phút + extra
-    }
-
-    private static void scheduleNextBump() {
-        if (!isRunning) return;
-        long delay = randomDelay();
-        timer = new Timer(true);
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                sendRandomMessage();
-                scheduleNextBump();
-            }
-        }, delay);
-
-        System.out.println("[" + timeNow() + "] Lần bump tiếp theo sau ~" + (delay / 60_000) + " phút");
-    }
-
-    private static void sendRandomMessage() {
-        String message = MESSAGES.get(random.nextInt(MESSAGES.size()));
+    private static void send(String content) {
         try {
-            URL url = new URI("https://discord.com/api/v9/channels/" + CHANNEL_ID + "/messages").toURL();
-            HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Authorization", USER_TOKEN);
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setRequestProperty("User-Agent", "Mozilla/5.0");
-            conn.setDoOutput(true);
+            URL url = new URI("https://discord.com/api/v9/channels/" + CHANNEL + "/messages").toURL();
+            HttpsURLConnection c = (HttpsURLConnection) url.openConnection();
+            c.setRequestMethod("POST");
+            c.setRequestProperty("Authorization", TOKEN);
+            c.setRequestProperty("Content-Type", "application/json");
+            c.setRequestProperty("User-Agent", "Mozilla/5.0");
+            c.setDoOutput(true);
 
-            String payload = "{\"content\":\"" + message.replace("\"", "\\\"") + "\"}";
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(payload.getBytes(StandardCharsets.UTF_8));
-            }
+            String json = "{\"content\":\"" + content.replace("\"", "\\\"") + "\"}";
+            c.getOutputStream().write(json.getBytes(StandardCharsets.UTF_8));
 
-            int code = conn.getResponseCode();
+            int code = c.getResponseCode();
             if (code == 200 || code == 204) {
-                System.out.println("[" + timeNow() + "] ĐÃ BUMP: " + message);
+                System.out.println("[" + new java.text.SimpleDateFormat("HH:mm:ss").format(new Date()) + "] ĐÃ GỬI: " + content);
             } else {
-                String err = readStream(code >= 400 ? conn.getErrorStream() : conn.getInputStream());
-                System.out.println("[" + timeNow() + "] LỖI " + code + ": " + err);
-                if (code == 401 || code == 403) {
-                    System.err.println("TOKEN DIE RỒI! Dừng luôn đây...");
-                    System.exit(0);
-                }
+                System.out.println("Lỗi " + code);
+                if (code == 401 || code == 403) System.exit(0);
             }
-            conn.disconnect();
         } catch (Exception e) {
-            System.out.println("[" + timeNow() + "] Lỗi: " + e.getMessage());
+            System.out.println("Lỗi: " + e.getMessage());
         }
-    }
-
-    private static String timeNow() {
-        return new java.text.SimpleDateFormat("HH:mm:ss").format(new Date());
-    }
-
-    private static String readStream(InputStream stream) throws IOException {
-        if (stream == null) return "";
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(stream))) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = br.readLine()) != null) sb.append(line);
-            return sb.toString();
-        }
-    }
-
-    private static String mask(String s) {
-        if (s.length() < 10) return "****";
-        return s.substring(0, 8) + "..." + s.substring(s.length() - 6);
     }
 }
