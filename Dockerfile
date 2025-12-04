@@ -1,10 +1,13 @@
-FROM eclipse-temurin:21-jdk-alpine
+# Dùng image runtime, không phải JDK (nhẹ + không chạy JShell)
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-# Copy source code
+# Copy toàn bộ file
 COPY . .
 
-# Compile file java (vì mày chỉ có 1 file .java)
-RUN javac Main.java
+# Compile
+RUN javac SmartLevelSpammer.java
 
+# Chạy chương trình bình thường (quan trọng: không dùng shell form)
+ENTRYPOINT ["java", "SmartLevelSpammer"]
