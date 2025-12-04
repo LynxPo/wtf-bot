@@ -3,5 +3,5 @@
   "build": {
     "builder": "NIXPACKS"
   },
-  "start": "java SmartLevelSpammer"
+  "start": "java Main"
 }
