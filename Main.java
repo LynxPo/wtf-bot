@@ -2,8 +2,6 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 class Main {
@@ -11,9 +9,6 @@ class Main {
     // ============================================
     // PHẦN CẤU HÌNH
     // ============================================
-
-    // Channel ID muốn gửi tin
-    private static final String CHANNEL_ID = "1011985329529569400";
 
     // Cấu hình thời gian (Đơn vị: PHÚT)
     private static final int MIN_MINUTES = 120; // Tối thiểu 2 tiếng
@@ -29,8 +24,9 @@ class Main {
             "Tuyệt vời quá."
     };
 
-    // Tên biến môi trường chứa Token (Bảo mật)
-    private static final String ENV_VAR_NAME = "MY_DISCORD_TOKEN";
+    // Tên biến môi trường (BẢO MẬT)
+    private static final String TOKEN_ENV_NAME = "MY_DISCORD_TOKEN";
+    private static final String CHANNEL_ENV_NAME = "DISCORD_CHANNEL_ID";
 
     // ============================================
     // LOGIC XỬ LÝ
@@ -39,30 +35,40 @@ class Main {
     private static volatile boolean isRunning = true;
     private static final Random random = new Random();
     private static String USER_TOKEN = "";
+    private static String CHANNEL_ID = "";
 
     public static void main(String[] args) {
         System.out.println("=================================");
         System.out.println("Discord Advanced Self-Bot");
         System.out.println("=================================\n");
 
-        // 1. Lấy Token từ biến môi trường (BẢO MẬT)
-        USER_TOKEN = System.getenv(ENV_VAR_NAME);
+        // 1. Lấy Token từ biến môi trường
+        USER_TOKEN = System.getenv(TOKEN_ENV_NAME);
+        CHANNEL_ID = System.getenv(CHANNEL_ENV_NAME);
 
+        // Kiểm tra Token
         if (USER_TOKEN == null || USER_TOKEN.isEmpty()) {
-            System.err.println("❌ LỖI: Không tìm thấy Token!");
-            System.err.println("Vui lòng tạo biến môi trường tên: " + ENV_VAR_NAME);
-            System.err.println("Cách làm: Xem hướng dẫn bên dưới code.");
+            System.err.println("❌ LỖI: Không tìm thấy Discord Token!");
+            System.err.println("Vui lòng tạo biến môi trường: " + TOKEN_ENV_NAME);
+            System.err.println("\nCách làm trên Railway:");
+            System.err.println("1. Vào Variables tab");
+            System.err.println("2. Thêm: " + TOKEN_ENV_NAME + " = <token của bạn>");
             return;
         }
 
-        if (CHANNEL_ID.equals("123456789012345678")) {
-            System.err.println("❌ LỖI: Bạn chưa thay đổi CHANNEL_ID trong code!");
+        // Kiểm tra Channel ID
+        if (CHANNEL_ID == null || CHANNEL_ID.isEmpty()) {
+            System.err.println("❌ LỖI: Không tìm thấy Channel ID!");
+            System.err.println("Vui lòng tạo biến môi trường: " + CHANNEL_ENV_NAME);
+            System.err.println("\nCách làm trên Railway:");
+            System.err.println("1. Vào Variables tab");
+            System.err.println("2. Thêm: " + CHANNEL_ENV_NAME + " = <channel ID của bạn>");
             return;
         }
 
         System.out.println("--- CẤU HÌNH ---");
         System.out.println("Token: " + maskToken(USER_TOKEN));
-        System.out.println("Channel ID: " + CHANNEL_ID);
+        System.out.println("Channel ID: " + maskChannelId(CHANNEL_ID));
         System.out.println("Thời gian: Random từ " + MIN_MINUTES + " đến " + MAX_MINUTES + " phút.");
         System.out.println("Số lượng tin nhắn mẫu: " + MESSAGES.length);
         System.out.println("----------------\n");
@@ -101,7 +107,6 @@ class Main {
             sendMessage(messageToSend);
 
             // 3. Tính toán thời gian ngủ ngẫu nhiên
-            // Công thức: (Min + random(0 đến Max-Min)) * 60 * 1000 (đổi ra mili giây)
             int randomMinutes = MIN_MINUTES + random.nextInt(MAX_MINUTES - MIN_MINUTES + 1);
             long sleepMillis = randomMinutes * 60 * 1000L;
 
@@ -161,6 +166,11 @@ class Main {
     private static String maskToken(String token) {
         if (token == null || token.length() <= 10) return "***";
         return token.substring(0, 5) + "..." + token.substring(token.length() - 5);
+    }
+
+    private static String maskChannelId(String channelId) {
+        if (channelId == null || channelId.length() <= 8) return "***";
+        return channelId.substring(0, 4) + "****" + channelId.substring(channelId.length() - 4);
     }
 
     private static String escapeJson(String text) {
