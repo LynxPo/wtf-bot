@@ -11,17 +11,15 @@ class Main {
     // ============================================
 
     // Cấu hình thời gian (Đơn vị: PHÚT)
-    private static final int MIN_MINUTES = 120; // Tối thiểu 2 tiếng
-    private static final int MAX_MINUTES = 135; // Tối đa 2 tiếng 15 phút
+    private static final int MIN_MINUTES = 60; // Tối thiểu 2 tiếng
+    private static final int MAX_MINUTES = 63; // Tối đa 2 tiếng 15 phút
 
     // Danh sách tin nhắn để random
     private static final String[] MESSAGES = {
-            "Xin chào mọi người!",
-            "Chúc một ngày tốt lành.",
-            "Tôi đang treo máy, đừng tag nhé.",
-            "Hello world!",
-            "Cảm ơn vì đã chia sẻ.",
-            "Tuyệt vời quá."
+            "Xin hay tin tuong :pray:",
+            ":pray: moi su tot dep",
+            "Vuon minh :thap:",
+            "Tin tuog qua trinh :pray:"
     };
 
     // Tên biến môi trường (BẢO MẬT)
