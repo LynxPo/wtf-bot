@@ -1,10 +1,9 @@
-FROM eclipse-temurin:17-jdk-alpine
+FROM eclipse-temurin:21-jdk-alpine
 
 WORKDIR /app
 
-# Copy file JAR từ thư mục target
-COPY target/*.jar app.jar
+# Copy source code
+COPY . .
 
-EXPOSE 8080
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Compile file java (vì mày chỉ có 1 file .java)
+RUN javac SecureDiscordBot.java
