@@ -1,5 +1,6 @@
 FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
 COPY . .
-RUN javac SmartLevelSpammer.java
-ENTRYPOINT ["java", "SmartLevelSpammer"]
+RUN javac Main.java
+ENTRYPOINT ["java", "Main"]
+
